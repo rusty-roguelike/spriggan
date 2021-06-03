@@ -1,162 +1,103 @@
-use rltk::{GameState, Rltk, RGB, Point};
+use rltk::{GameState, Rltk, RGB, VirtualKeyCode};
 use specs::prelude::*;
-mod components;
-pub use components::*;
-mod map;
-pub use map::*;
-mod player;
-use player::*;
-mod rect;
-pub use rect::Rect;
-mod visibility_system;
-use visibility_system::VisibilitySystem;
-mod monster_ai_system;
-use monster_ai_system::MonsterAI;
-mod map_indexing_system;
-use map_indexing_system::MapIndexingSystem;
-mod melee_combat_system;
-use melee_combat_system::MeleeCombatSystem;
-mod damage_system;
-use damage_system::DamageSystem;
+use std::cmp::{max, min};
+use specs_derive::Component;
 
 
 
-#[derive(PartialEq, Copy, Clone)]
-pub enum RunState { AwaitingInput, PreRun, PlayerTurn, MonsterTurn }
-
-pub struct State {
-    pub ecs: World
+#[derive(Component)]
+struct Position {
+    x: i32,
+    y: i32,
 }
 
-impl State {
-    fn run_systems(&mut self) {
-        let mut vis = VisibilitySystem{};
-        vis.run_now(&self.ecs);
-        let mut mob = MonsterAI{};
-        mob.run_now(&self.ecs);
-        let mut mapindex = MapIndexingSystem{};
-        mapindex.run_now(&self.ecs);
-        let mut melee = MeleeCombatSystem{};
-        melee.run_now(&self.ecs);
-        let mut damage = DamageSystem{};
-        damage.run_now(&self.ecs);
-        self.ecs.maintain();
+#[derive(Component)]
+struct Renderable {
+    glyph: rltk::FontCharType,
+    fg: RGB,
+    bg: RGB,
+}
+
+#[derive(Component)]
+struct LeftMover {}
+
+#[derive(Component, Debug)]
+struct Player {}
+
+struct State {
+    ecs: World
+}
+
+fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
+    let mut positions = ecs.write_storage::<Position>();
+    let mut players = ecs.write_storage::<Player>();
+
+    for (_player, pos) in (&mut players, &mut positions).join() {
+        pos.x = min(79 , max(0, pos.x + delta_x));
+        pos.y = min(49, max(0, pos.y + delta_y));
+    }
+}
+
+fn player_input(gs: &mut State, ctx: &mut Rltk) {
+    // Player movement
+    match ctx.key {
+        None => {} // Nothing happened
+        Some(key) => match key {
+            VirtualKeyCode::Left => try_move_player(-1, 0, &mut gs.ecs),
+            VirtualKeyCode::Right => try_move_player(1, 0, &mut gs.ecs),
+            VirtualKeyCode::Up => try_move_player(0, -1, &mut gs.ecs),
+            VirtualKeyCode::Down => try_move_player(0, 1, &mut gs.ecs),
+            _ => {}
+        },
     }
 }
 
 impl GameState for State {
     fn tick(&mut self, ctx : &mut Rltk) {
         ctx.cls();
-        let mut newrunstate;
-        {
-            let runstate = self.ecs.fetch::<RunState>();
-            newrunstate = *runstate;
-        }
 
-        match newrunstate {
-            RunState::PreRun => {
-                self.run_systems();
-                newrunstate = RunState::AwaitingInput;
-            }
-            RunState::AwaitingInput => {
-                newrunstate = player_input(self, ctx);
-            }
-            RunState::PlayerTurn => {
-                self.run_systems();
-                newrunstate = RunState::MonsterTurn;
-            }
-            RunState::MonsterTurn => {
-                self.run_systems();
-                newrunstate = RunState::AwaitingInput;
-            }
-        }
-
-        {
-            let mut runwriter = self.ecs.write_resource::<RunState>();
-            *runwriter = newrunstate;
-        }
-        damage_system::delete_the_dead(&mut self.ecs);
-
-        draw_map(&self.ecs, ctx);
+        player_input(self, ctx);
+        self.run_systems();
 
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
-        let map = self.ecs.fetch::<Map>();
 
         for (pos, render) in (&positions, &renderables).join() {
-            let idx = map.xy_idx(pos.x, pos.y);
-            if map.visible_tiles[idx] { ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph) }
+            ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
         }
+    }
+}
+
+
+impl State {
+    fn run_systems(&mut self) {
+        self.ecs.maintain();
     }
 }
 
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
     let context = RltkBuilder::simple80x50()
-        .with_title("Roguelike Tutorial")
+        .with_title("spriggan")
         .build()?;
     let mut gs = State {
-        ecs: World::new(),
+        ecs: World::new()
     };
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
+    gs.ecs.register::<LeftMover>();
     gs.ecs.register::<Player>();
-    gs.ecs.register::<Viewshed>();
-    gs.ecs.register::<Monster>();
-    gs.ecs.register::<Name>();
-    gs.ecs.register::<BlocksTile>();
-    gs.ecs.register::<CombatStats>();
-    gs.ecs.register::<WantsToMelee>();
-    gs.ecs.register::<SufferDamage>();
 
-    let map : Map = Map::new_map_rooms_and_corridors();
-    let (player_x, player_y) = map.rooms[0].center();
-
-    let player_entity = gs.ecs
+    gs.ecs
         .create_entity()
-        .with(Position { x: player_x, y: player_y })
+        .with(Position { x: 40, y: 25 })
         .with(Renderable {
             glyph: rltk::to_cp437('@'),
             fg: RGB::named(rltk::YELLOW),
             bg: RGB::named(rltk::BLACK),
         })
         .with(Player{})
-        .with(Viewshed{ visible_tiles : Vec::new(), range: 8, dirty: true })
-        .with(Name{name: "Player".to_string() })
-        .with(CombatStats{ max_hp: 30, hp: 30, defense: 2, power: 5 })
         .build();
-
-    let mut rng = rltk::RandomNumberGenerator::new();
-    for (i,room) in map.rooms.iter().skip(1).enumerate() {
-        let (x,y) = room.center();
-
-        let glyph : rltk::FontCharType;
-        let name : String;
-        let roll = rng.roll_dice(1, 2);
-        match roll {
-            1 => { glyph = rltk::to_cp437('g'); name = "Goblin".to_string(); }
-            _ => { glyph = rltk::to_cp437('o'); name = "Orc".to_string(); }
-        }
-
-        gs.ecs.create_entity()
-            .with(Position{ x, y })
-            .with(Renderable{
-                glyph,
-                fg: RGB::named(rltk::RED),
-                bg: RGB::named(rltk::BLACK),
-            })
-            .with(Viewshed{ visible_tiles : Vec::new(), range: 8, dirty: true })
-            .with(Monster{})
-            .with(Name{ name: format!("{} #{}", &name, i) })
-            .with(BlocksTile{})
-            .with(CombatStats{ max_hp: 16, hp: 16, defense: 1, power: 4 })
-            .build();
-    }
-
-    gs.ecs.insert(map);
-    gs.ecs.insert(Point::new(player_x, player_y));
-    gs.ecs.insert(player_entity);
-    gs.ecs.insert(RunState::PreRun);
 
     rltk::main_loop(context, gs)
 }
