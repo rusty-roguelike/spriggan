@@ -1,12 +1,10 @@
-use rltk::{GameState, Rltk, RGB, VirtualKeyCode};
+use rltk::{GameState, Rltk, RGB, VirtualKeyCode, console};
 use specs::prelude::*;
 use std::cmp::{max, min};
 use specs_derive::Component;
 
-
-
 #[derive(Component)]
-struct Position {
+pub struct Position {
     x: i32,
     y: i32,
 }
@@ -26,6 +24,25 @@ struct Player {}
 
 struct State {
     ecs: World
+}
+
+#[derive(Component, Debug)]
+pub struct Monster {}
+
+pub struct MonsterAI {}
+
+impl<'a> System<'a> for MonsterAI {
+
+    type SystemData = ( ReadStorage<'a, Position>,
+                        ReadStorage<'a, Monster>); 
+
+    fn run(&mut self, data: Self::SystemData) {
+        let (pos, monster) = data;
+
+        for(pos, _monster) in (&pos, &monster).join() {
+            console::log("Monster AI placeholder");
+        }
+    }
 }
 
 fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
@@ -71,6 +88,8 @@ impl GameState for State {
 
 impl State {
     fn run_systems(&mut self) {
+        let mut mob = MonsterAI{};
+        mob.run_now(&self.ecs);
         self.ecs.maintain();
     }
 }
@@ -87,6 +106,9 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<LeftMover>();
     gs.ecs.register::<Player>();
+    gs.ecs.register::<Monster>();
+
+
 
     gs.ecs
         .create_entity()
@@ -97,7 +119,35 @@ fn main() -> rltk::BError {
             bg: RGB::named(rltk::BLACK),
         })
         .with(Player{})
+        .with(Monster{})
         .build();
+
+    //spawn 10 monsters
+    let mut rng = rltk::RandomNumberGenerator::new();
+    for i in 1..=10 {
+        let (x,y) = (rng.range(0,81), rng.range(0,46)); 
+        
+        let glyph : rltk::FontCharType;
+        let roll = rng.roll_dice(1,4);
+
+        match roll {
+            1 => { glyph = rltk::to_cp437('X') }
+            2 => { glyph = rltk::to_cp437('O') }
+            3 => { glyph = rltk::to_cp437('*') }
+            _ => { glyph = rltk::to_cp437('^') }
+        }
+
+        gs.ecs.create_entity()
+            .with(Position{ x, y })
+            .with(Renderable{
+                glyph: glyph,
+                fg: RGB::named(rltk::RED),
+                bg: RGB::named(rltk::BLACK),
+            })
+            .build();
+
+    }       
+
 
     rltk::main_loop(context, gs)
 }
