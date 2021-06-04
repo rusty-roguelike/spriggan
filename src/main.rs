@@ -2,25 +2,8 @@ use rltk::{GameState, Rltk, RGB, VirtualKeyCode, console};
 use specs::prelude::*;
 use std::cmp::{max, min};
 use specs_derive::Component;
-
-#[derive(Component)]
-pub struct Position {
-    x: i32,
-    y: i32,
-}
-
-#[derive(Component)]
-struct Renderable {
-    glyph: rltk::FontCharType,
-    fg: RGB,
-    bg: RGB,
-}
-
-#[derive(Component)]
-struct LeftMover {}
-
-#[derive(Component, Debug)]
-struct Player {}
+mod components;
+use components::*;
 
 struct State {
     ecs: World
@@ -64,6 +47,7 @@ fn player_input(gs: &mut State, ctx: &mut Rltk) {
             VirtualKeyCode::Right => try_move_player(1, 0, &mut gs.ecs),
             VirtualKeyCode::Up => try_move_player(0, -1, &mut gs.ecs),
             VirtualKeyCode::Down => try_move_player(0, 1, &mut gs.ecs),
+
             _ => {}
         },
     }
