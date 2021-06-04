@@ -4,6 +4,10 @@ use std::cmp::{max, min};
 use specs_derive::Component;
 mod components;
 use components::*;
+mod map;
+use map::*;
+mod rect;
+pub use rect::Rect;
 
 struct State {
     ecs: World
