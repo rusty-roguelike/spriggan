@@ -1,7 +1,6 @@
-use rltk::{GameState, Rltk, RGB, VirtualKeyCode, console};
+use rltk::{GameState, Rltk};
+use rltk::RGB;
 use specs::prelude::*;
-use std::cmp::{max, min};
-use specs_derive::Component;
 mod components;
 use components::*;
 mod map;
@@ -15,9 +14,9 @@ pub struct State {
     ecs: World
 }
 
-pub struct MonsterAI {}
+pub struct MonsterAi {}
 
-impl<'a> System<'a> for MonsterAI {
+impl<'a> System<'a> for MonsterAi {
 
     type SystemData = ( ReadStorage<'a, Position>,
                         ReadStorage<'a, Monster>); 
@@ -26,7 +25,11 @@ impl<'a> System<'a> for MonsterAI {
         let (pos, monster) = data;
 
         for(pos, _monster) in (&pos, &monster).join() {
-            console::log("Monster AI placeholder");
+            for _x in pos.x-6..pos.x+6 {
+                for _y in pos.y-6..pos.y+6 {
+                    // look for player in this range and move toward them
+                }
+            }
         }
     }
 }
@@ -53,7 +56,7 @@ impl GameState for State {
 
 impl State {
     fn run_systems(&mut self) {
-        let mut mob = MonsterAI{};
+        let mut mob = MonsterAi{};
         mob.run_now(&self.ecs);
         self.ecs.maintain();
     }
@@ -73,8 +76,6 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Player>();
     gs.ecs.register::<Monster>();
 
-
-
     gs.ecs
         .create_entity()
         .with(Position { x: 40, y: 25 })
@@ -84,7 +85,6 @@ fn main() -> rltk::BError {
             bg: RGB::named(rltk::BLACK),
         })
         .with(Player{})
-        .with(Monster{})
         .build();
 
         let map : Map = Map::new_map_walls();
@@ -93,7 +93,7 @@ fn main() -> rltk::BError {
 
     //spawn 10 monsters
     let mut rng = rltk::RandomNumberGenerator::new();
-    for i in 1..=10 {
+    for _i in 1..=10 {
         let (x,y) = (rng.range(0,81), rng.range(0,46)); 
         
         let glyph : rltk::FontCharType;
@@ -105,15 +105,15 @@ fn main() -> rltk::BError {
             3 => { glyph = rltk::to_cp437('*') }
             _ => { glyph = rltk::to_cp437('^') }
         }
-        
 
         gs.ecs.create_entity()
             .with(Position{ x, y })
             .with(Renderable{
-                glyph: glyph,
+                glyph,
                 fg: RGB::named(rltk::RED),
                 bg: RGB::named(rltk::BLACK),
             })
+            .with(Monster{})
             .build();
 
     }       

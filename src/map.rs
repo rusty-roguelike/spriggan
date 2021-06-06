@@ -1,6 +1,5 @@
 use rltk::{ RGB, Rltk, RandomNumberGenerator, BaseMap, Algorithm2D, Point };
 use super::{Rect};
-use std::cmp::{max, min};
 use specs::prelude::*;
 
 #[derive(PartialEq, Copy, Clone)]
@@ -49,8 +48,8 @@ impl Map {
         //Generate a set of walls
         for _i in 0..MAX_WALLS {
 
-            let mut x = 0;
-            let mut y = 0;
+            let x: i32;
+            let y: i32;
             let mut width = 1;
             let mut height = 1;
 
@@ -109,11 +108,11 @@ pub fn draw_map(ecs: &World, ctx : &mut Rltk) {
 
     let mut y = 0;
     let mut x = 0;
-    for (idx,tile) in map.tiles.iter().enumerate() {
+    for (_idx,tile) in map.tiles.iter().enumerate() {
         // Render a tile depending upon the tile type
 
         let glyph;
-        let mut fg;
+        let fg;
         match tile {
             TileType::Floor => {
                 glyph = rltk::to_cp437('.');
