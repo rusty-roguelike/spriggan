@@ -97,7 +97,7 @@ fn main() -> rltk::BError {
 
     //spawn 10 monsters
     let mut rng = rltk::RandomNumberGenerator::new();
-    for _i in 1..=10 {
+    for _i in 1..= 10{
         
         let glyph : rltk::FontCharType;
         let roll = rng.roll_dice(1,4);
@@ -108,10 +108,9 @@ fn main() -> rltk::BError {
             3 => { glyph = rltk::to_cp437('*') }
             _ => { glyph = rltk::to_cp437('^') }
         }
-        let section_x = rng.roll_dice(2,7);
-        let section_y = rng.roll_dice(1,4);
 
-        let (monster_x, monster_y) = map.get_empty_tile_in_section(section_x,section_y);
+        let (section_x, section_y) = (rng.range(1,7), rng.range(1,4));
+        let (monster_x, monster_y) = map.get_empty_tile_in_section(section_x, section_y);
 
         gs.ecs.create_entity()
             .with(Position{ x:monster_x, y:monster_y })

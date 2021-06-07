@@ -23,7 +23,7 @@ impl Map {
 
     ///Given tile index, return x and y coordinates
     pub fn idx_xy(&self, idx: i32) -> (i32,i32) {
-        (idx / 80, idx % 80)
+        (idx % 80, idx / 80)
     }
 
     ///Create a wall
@@ -99,7 +99,7 @@ impl Map {
 
     ///Get an empty (Floor) tile in a section of the map
     ///A section is a 10x10 tile piece of the map, with section (0,0) being the top-left 100 tiles, and section (7,4) being the bottom right 100 tiles
-    ///Input section number (0 through 39), returns tile index (0-3999)
+    ///Input section number (0 through 39), returns x,y coordinate of empty tile for player/monster placement
     pub fn get_empty_tile_in_section(&self, section_x:i32, section_y:i32) -> (i32,i32)
     {
         let mut section_idxs : Vec<i32> = vec!();
@@ -112,7 +112,7 @@ impl Map {
 
         
         let mut rng = RandomNumberGenerator::new();
-        let mut roll = rng.roll_dice(0,99); 
+        let mut roll = rng.range(0,99); 
 
         while self.tiles[section_idxs[roll as usize] as usize] != TileType::Floor {
             roll = rng.roll_dice(0,99); 
@@ -162,4 +162,11 @@ pub fn draw_map(ecs: &World, ctx : &mut Rltk) {
             y += 1;
         }
     }
+}
+
+#[test]
+pub fn test_idx_xy(){
+    let map = Map::new_map_walls();
+    assert_eq!(map.idx_xy(81), (1,1));
+    assert_eq!(map.idx_xy(364), (44,4)); 
 }
