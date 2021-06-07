@@ -16,8 +16,14 @@ pub struct Map {
 }
 
 impl Map {
+    ///Given x and y coordinates, return tile index
     pub fn xy_idx(&self, x: i32, y: i32) -> usize {
         (y as usize * self.width as usize) + x as usize
+    }
+
+    ///Given tile index, return x and y coordinates
+    pub fn idx_xy(&self, idx: i32) -> (i32,i32) {
+        (idx / 80, idx % 80)
     }
 
     ///Create a wall
@@ -30,7 +36,7 @@ impl Map {
         }
     }
     
-    /// Maps a new map with walls
+    /// Maps a new map with randomly placed walls
     pub fn new_map_walls() -> Map {
         let mut map = Map{
             tiles : vec![TileType::Floor; 80*50],
@@ -89,6 +95,30 @@ impl Map {
         }
 
         map
+    }
+
+    ///Get an empty (Floor) tile in a section of the map
+    ///A section is a 10x10 tile piece of the map, with section (0,0) being the top-left 100 tiles, and section (7,4) being the bottom right 100 tiles
+    ///Input section number (0 through 39), returns tile index (0-3999)
+    pub fn get_empty_tile_in_section(&self, section_x:i32, section_y:i32) -> (i32,i32)
+    {
+        let mut section_idxs : Vec<i32> = vec!();
+
+        for x_offset in 0..10 {
+            for y_offset in 0..10 {
+                section_idxs.push(self.xy_idx(section_x * 10 + x_offset, section_y * 10 + y_offset) as i32);
+            }
+        }
+
+        
+        let mut rng = RandomNumberGenerator::new();
+        let mut roll = rng.roll_dice(0,99); 
+
+        while self.tiles[section_idxs[roll as usize] as usize] != TileType::Floor {
+            roll = rng.roll_dice(0,99); 
+        }
+
+        self.idx_xy(section_idxs[roll as usize])
     }
 } 
 impl BaseMap for Map {

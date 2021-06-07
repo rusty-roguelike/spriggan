@@ -76,9 +76,15 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Player>();
     gs.ecs.register::<Monster>();
 
+    let map : Map = Map::new_map_walls();
+
+
+    // Spawn player somewhere in top-left 100 tiles
+    let (player_x, player_y) = map.get_empty_tile_in_section(0,0);
+    
     gs.ecs
         .create_entity()
-        .with(Position { x: 40, y: 25 })
+        .with(Position { x: player_x, y: player_y })
         .with(Renderable {
             glyph: rltk::to_cp437('@'),
             fg: RGB::named(rltk::YELLOW),
@@ -87,14 +93,11 @@ fn main() -> rltk::BError {
         .with(Player{})
         .build();
 
-        let map : Map = Map::new_map_walls();
-        gs.ecs.insert(map);
 
 
     //spawn 10 monsters
     let mut rng = rltk::RandomNumberGenerator::new();
     for _i in 1..=10 {
-        let (x,y) = (rng.range(0,81), rng.range(0,46)); 
         
         let glyph : rltk::FontCharType;
         let roll = rng.roll_dice(1,4);
@@ -105,9 +108,13 @@ fn main() -> rltk::BError {
             3 => { glyph = rltk::to_cp437('*') }
             _ => { glyph = rltk::to_cp437('^') }
         }
+        let section_x = rng.roll_dice(2,7);
+        let section_y = rng.roll_dice(1,4);
+
+        let (monster_x, monster_y) = map.get_empty_tile_in_section(section_x,section_y);
 
         gs.ecs.create_entity()
-            .with(Position{ x, y })
+            .with(Position{ x:monster_x, y:monster_y })
             .with(Renderable{
                 glyph,
                 fg: RGB::named(rltk::RED),
@@ -115,9 +122,9 @@ fn main() -> rltk::BError {
             })
             .with(Monster{})
             .build();
-
     }       
 
+    gs.ecs.insert(map);
 
     rltk::main_loop(context, gs)
 }
