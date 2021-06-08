@@ -2,7 +2,7 @@ use rltk::{ RGB, Rltk, RandomNumberGenerator, BaseMap, Algorithm2D, Point };
 use super::{Rect};
 use specs::prelude::*;
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, Debug)]
 pub enum TileType {
     Wall, Floor
 }
@@ -99,7 +99,7 @@ impl Map {
 
     ///Get an empty (Floor) tile in a section of the map
     ///A section is a 10x10 tile piece of the map, with section (0,0) being the top-left 100 tiles, and section (7,4) being the bottom right 100 tiles
-    ///Input section number (0 through 39), returns x,y coordinate of empty tile for player/monster placement
+    ///Returns x,y coordinate of empty tile for player/monster placement
     pub fn get_empty_tile_in_section(&self, section_x:i32, section_y:i32) -> (i32,i32)
     {
         let mut section_idxs : Vec<i32> = vec!();
@@ -115,7 +115,7 @@ impl Map {
         let mut roll = rng.range(0,99); 
 
         while self.tiles[section_idxs[roll as usize] as usize] != TileType::Floor {
-            roll = rng.roll_dice(0,99); 
+            roll = rng.range(0,99); 
         }
 
         self.idx_xy(section_idxs[roll as usize])
@@ -169,4 +169,27 @@ pub fn test_idx_xy(){
     let map = Map::new_map_walls();
     assert_eq!(map.idx_xy(81), (1,1));
     assert_eq!(map.idx_xy(364), (44,4)); 
+}
+
+#[test]
+pub fn test_get_empty_tile_in_section() {
+    let map = Map::new_map_walls();
+
+    let (x,y) = map.get_empty_tile_in_section(0,0);
+
+    assert!(x >= 0 && x <= 9);
+    assert!(y >= 0 && y <= 9);
+    assert_eq!(map.tiles[map.xy_idx(x,y) as usize], TileType::Floor);
+
+    let (x,y) = map.get_empty_tile_in_section(3,4);
+    assert!(x >= 30 && x <= 39);
+    assert!(y >= 0 && y <= 49);
+    assert_eq!(map.tiles[map.xy_idx(x,y) as usize], TileType::Floor);
+}
+
+#[test]
+pub fn test_xy_idx(){
+    let map = Map::new_map_walls();
+    assert_eq!(map.xy_idx(1,1), 81);
+    assert_eq!(map.xy_idx(44,4), 364); 
 }
