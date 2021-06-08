@@ -2,7 +2,7 @@ use specs::prelude::*;
 use specs_derive::*;
 use rltk::{RGB};
 
-#[derive(Component)]
+#[derive(Component, PartialEq)]
 pub struct Position {
     pub x: i32,
     pub y: i32,
@@ -19,9 +19,13 @@ pub struct Renderable {
 pub struct LeftMover {}
 
 #[derive(Component, Debug)]
-pub struct Player {}
+pub struct Player {
+    pub hp: i32,
+}
 
 #[derive(Component, Debug)]
-pub struct Monster {}
+pub struct Monster {
+    pub hp: i32,
+}
 
 

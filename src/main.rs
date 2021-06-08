@@ -90,7 +90,9 @@ fn main() -> rltk::BError {
             fg: RGB::named(rltk::YELLOW),
             bg: RGB::named(rltk::BLACK),
         })
-        .with(Player{})
+        .with(Player{
+            hp: 10
+        })
         .build();
 
 
@@ -119,7 +121,9 @@ fn main() -> rltk::BError {
                 fg: RGB::named(rltk::RED),
                 bg: RGB::named(rltk::BLACK),
             })
-            .with(Monster{})
+            .with(Monster{
+                hp: 2
+            })
             .build();
     }       
 
