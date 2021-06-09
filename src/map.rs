@@ -179,7 +179,7 @@ pub fn test_get_empty_tile_in_section() {
 
     let (x, y) = map.get_empty_tile_in_section(3, 4);
     assert!(x >= 30 && x <= 39);
-    assert!(y >= 0 && y <= 49);
+    assert!(y >= 0 && y <= 48);
     assert_eq!(map.tiles[map.xy_idx(x, y) as usize], TileType::Floor);
 }
 
