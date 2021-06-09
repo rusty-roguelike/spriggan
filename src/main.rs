@@ -1,4 +1,4 @@
-use rltk::{GameState, Rltk};
+use rltk::{GameState, Rltk, VirtualKeyCode};
 use rltk::RGB;
 use specs::prelude::*;
 mod components;
@@ -26,31 +26,66 @@ pub struct MonsterAi {}
 
 impl<'a> System<'a> for MonsterAi {
 
-    type SystemData = ( ReadStorage<'a, Position>,
-                        ReadStorage<'a, Position>,
+    type SystemData = ( WriteStorage<'a, Position>,
                         ReadStorage<'a, Monster>,
                         WriteStorage<'a, Player>);
 
     fn run(&mut self, data: Self::SystemData) {
-        let (player_pos,
-            monster_pos,
-            monsters,
-            mut players) = data;
+        let (mut pos_storage,
+            mon_storage,
+            mut player_storage) = data;
 
+        let mut player_positions: Vec<Position> = vec![];
+        for (_player, player_pos) in (&player_storage, &pos_storage).join() {
+            player_positions.push(*player_pos);
+        }
 
-        for(p_pos,  mut player) in (&player_pos, &mut players).join() {
-            for(mon_pos, monster) in (&monster_pos, &monsters).join() {
-                if adjacent_positions(0, *mon_pos, *p_pos) {
+        for (_mon, mon_pos) in (&mon_storage, &mut pos_storage).join() {
+            for player_pos in player_positions.iter() {
+                if adjacent_positions(10, *player_pos, *mon_pos) {
+                    let new_pos = move_toward(&mon_pos, &player_pos);
+                    mon_pos.x = new_pos.x;
+                    mon_pos.y = new_pos.y;
+                } else {
+                    let mut rng = rltk::RandomNumberGenerator::new();
+                    let roll = rng.roll_dice(1,4);
+
+                    match roll {
+                        1 => { mon_pos.x += 1; }
+                        2 => { mon_pos.x -= 1; }
+                        3 => { mon_pos.y += 1; }
+                        _ => { mon_pos.y -= 1; }
+                    }
+                }
+            }
+        }
+
+        for (player_pos, player) in (&pos_storage, &mut player_storage).join() {
+            for (mon_pos, _monster) in (&pos_storage, &mon_storage).join() {
+                if adjacent_positions(1, *player_pos, *mon_pos) {
                     player.hp -= 1;
                     println!("OUCH! Your HP is , {:?}", &player.hp);
                 }
-
-                // if adjacent_positions(10, *p_pos, *mon_pos) {
-                //     if (p_pos.y - mon_pos.y) > 1 {
-                //         mon_pos.y += 1;
-                //     }
-                // }
             }
+
+        }
+    }
+}
+
+fn move_toward(first: &Position, second: &Position) -> Position {
+    let delta_x = (second.x - first.x).abs();
+    let delta_y = (second.y - first.y).abs();
+    return if delta_x < delta_y {
+        if first.x < second.x {
+            Position { x: { first.x + 1 }, y: first.y }
+        } else {
+            Position { x: { first.x - 1 }, y: first.y }
+        }
+    } else {
+        if first.y < second.y {
+            Position { x: first.x, y: { first.y + 1 } }
+        } else {
+            Position { x: first.x, y: { first.y - 1 } }
         }
     }
 }
