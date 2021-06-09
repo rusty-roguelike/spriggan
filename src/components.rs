@@ -1,6 +1,6 @@
+use rltk::RGB;
 use specs::prelude::*;
 use specs_derive::*;
-use rltk::{RGB};
 
 #[derive(Component, PartialEq, Clone, Copy)]
 pub struct Position {
@@ -15,7 +15,6 @@ pub struct Renderable {
     pub bg: RGB,
 }
 
-
 #[derive(Component, Clone, Copy, Debug)]
 pub struct Player {
     pub hp: i32,
@@ -25,5 +24,3 @@ pub struct Player {
 pub struct Monster {
     pub hp: i32,
 }
-
-
