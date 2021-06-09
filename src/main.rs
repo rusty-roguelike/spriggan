@@ -10,6 +10,7 @@ pub use rect::Rect;
 mod player;
 use player::*;
 use specs::storage::GenericWriteStorage;
+use rltk::Point;
 
 pub struct State {
     world: World,
@@ -26,30 +27,32 @@ pub struct MonsterAi {}
 
 impl<'a> System<'a> for MonsterAi {
 
-    type SystemData = ( ReadStorage<'a, Position>,
-                        ReadStorage<'a, Position>,
+    type SystemData = ( ReadExpect<'a, Point>,
+                        WriteStorage<'a, Position>,
                         ReadStorage<'a, Monster>,
                         WriteStorage<'a, Player>);
 
     fn run(&mut self, data: Self::SystemData) {
         let (player_pos,
-            monster_pos,
+            mut monster_pos,
             monsters,
             mut players) = data;
 
+        let p_pos = Position{x: player_pos.x, y: player_pos.y};
 
-        for(p_pos,  mut player) in (&player_pos, &mut players).join() {
-            for(mon_pos, monster) in (&monster_pos, &monsters).join() {
-                if adjacent_positions(0, *mon_pos, *p_pos) {
+
+        for mut player in (&mut players).join() {
+            for(mut mon_pos, monster) in (&monster_pos, &monsters).join() {
+                if adjacent_positions(0, *mon_pos, p_pos) {
                     player.hp -= 1;
                     println!("OUCH! Your HP is , {:?}", &player.hp);
                 }
 
-                // if adjacent_positions(10, *p_pos, *mon_pos) {
-                //     if (p_pos.y - mon_pos.y) > 1 {
-                //         mon_pos.y += 1;
-                //     }
-                // }
+                 if adjacent_positions(10, p_pos, *mon_pos) {
+                     if (p_pos.y - mon_pos.y) > 1 {
+                         mon_pos = &Position{x: mon_pos.x, y:mon_pos.y+1};
+                     }
+                 }
             }
         }
     }
