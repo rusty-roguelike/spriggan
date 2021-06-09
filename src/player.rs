@@ -3,6 +3,7 @@ use specs::prelude::*;
 use std::cmp::{max, min};
 use super::{Position, Player, TileType, State, Map};
 use crate::components::Monster;
+use crate::{RunState, adjacent_positions};
 
 pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
     let mut positions = ecs.write_storage::<Position>();
@@ -21,26 +22,42 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
 
 
     }
+}
 
-    for (mut monster, monster_pos) in (&mut monsters, positions).join() {
-        if monster_pos == player_position {
-            monster.hp -=1;
+pub fn try_attack(ecs: &mut World) {
+    let mut player_positions = ecs.read_storage::<Position>();
+    let mut monster_positions = ecs.read_storage::<Position>();
+    let mut players = ecs.write_storage::<Player>();
+    let mut monsters = ecs.write_storage::<Monster>();
+
+
+    for (_player, &p_pos) in (&mut players, &player_positions).join() {
+        for (monster, &m_pos) in (&mut monsters, &monster_positions).join() {
+            if adjacent_positions(2, p_pos, m_pos) {
+                monster.hp -= 1;
+                println!("monster hp is , {:?}", &monster.hp);
+            }
         }
     }
 
 }
 
-pub fn player_input(gs: &mut State, ctx: &mut Rltk) {
+pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
     // Player movement
     match ctx.key {
-        None => {} // Nothing happened
+        None => {
+            return RunState::Paused
+        } // Nothing happened
         Some(key) => match key {
-            VirtualKeyCode::Left => try_move_player(-1, 0, &mut gs.ecs),
-            VirtualKeyCode::Right => try_move_player(1, 0, &mut gs.ecs),
-            VirtualKeyCode::Up => try_move_player(0, -1, &mut gs.ecs),
-            VirtualKeyCode::Down => try_move_player(0, 1, &mut gs.ecs),
-
-            _ => {}
+            VirtualKeyCode::Left => try_move_player(-1, 0, &mut gs.world),
+            VirtualKeyCode::Right => try_move_player(1, 0, &mut gs.world),
+            VirtualKeyCode::Up => try_move_player(0, -1, &mut gs.world),
+            VirtualKeyCode::Down => try_move_player(0, 1, &mut gs.world),
+            VirtualKeyCode::Space => try_attack(&mut gs.world),
+            _ => {
+                return RunState::Paused
+            }
         },
     }
+    RunState::Running
 }
