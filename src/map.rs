@@ -40,9 +40,9 @@ impl Map {
     /// Maps a new map with randomly placed walls
     pub fn new_map_walls() -> Map {
         let mut map = Map {
-            tiles: vec![TileType::Floor; 80 * 50],
+            tiles: vec![TileType::Floor; 80 * 49],
             width: 80,
-            height: 50,
+            height: 49,
             walls: Vec::new(),
         };
 

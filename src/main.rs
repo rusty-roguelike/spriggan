@@ -160,6 +160,13 @@ impl GameState for State {
         for (pos, render) in (&positions, &renderables).join() {
             ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
         }
+        ctx.print_color(
+            17,
+            49,
+            RGB::named(rltk::YELLOW),
+            RGB::named(rltk::BLACK),
+            "Arrows to move - Space to attack around you",
+        );
     }
 }
 
