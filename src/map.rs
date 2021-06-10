@@ -24,7 +24,7 @@ impl Map {
 
     ///Given tile index, return x and y coordinates
     pub fn idx_xy(&self, idx: i32) -> (i32, i32) {
-        (idx % 80, idx / 80)
+        (idx % self.width, self.width / 80)
     }
 
     ///Create a wall
@@ -37,12 +37,12 @@ impl Map {
         }
     }
 
-    /// Maps a new map with randomly placed walls
+    /// Creates a new map with randomly placed walls
     pub fn new_map_walls() -> Map {
         let mut map = Map {
-            tiles: vec![TileType::Floor; 80 * 49],
+            tiles: vec![TileType::Floor; 80 * 50],
             width: 80,
-            height: 49,
+            height: 50,
             walls: Vec::new(),
         };
 
@@ -51,6 +51,15 @@ impl Map {
         const MAX_SIZE: i32 = 12;
 
         let mut rng = RandomNumberGenerator::new();
+
+        //Place walls around the edge of the map
+        for i in 0..80 {
+            for j in 0..50 {
+                if i == 0 || i == 79 || j == 0 || j == 49 {
+                    map.tiles[((j * 80) + i) as usize] = TileType::Wall;
+                }
+            }
+        }
 
         //Generate a set of walls
         for _i in 0..MAX_WALLS {

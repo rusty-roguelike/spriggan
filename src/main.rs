@@ -46,7 +46,7 @@ impl<'a> System<'a> for MonsterAi {
                     mon_pos.y = new_pos.y;
                 } else {
                     let mut rng = rltk::RandomNumberGenerator::new();
-                    let roll = rng.roll_dice(1, 4);
+                    let roll = rng.range(1, 4);
 
                     match roll {
                         1 => {
@@ -162,7 +162,7 @@ impl GameState for State {
         }
         ctx.print_color(
             17,
-            49,
+            50,
             RGB::named(rltk::YELLOW),
             RGB::named(rltk::BLACK),
             "Arrows to move - Space to attack around you",
@@ -197,7 +197,10 @@ impl State {
 
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
-    let context = RltkBuilder::simple80x50().with_title("spriggan").build()?;
+    let context = RltkBuilder::simple(80, 51)
+        .unwrap()
+        .with_title("spriggan")
+        .build()?;
     let mut game_state = State {
         world: World::new(),
         run_state: RunState::Running,
