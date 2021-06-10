@@ -19,6 +19,7 @@ pub struct State {
 pub enum RunState {
     Paused,
     Running,
+    Dead,
 }
 
 pub struct MonsterAi {}
@@ -145,10 +146,12 @@ impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
 
-        if self.run_state == RunState::Running {
+        if check_player_dead(&mut self.world) {
+            self.run_state = RunState::Dead;
+        } else if self.run_state == RunState::Running {
             self.run_systems();
             self.run_state = RunState::Paused;
-        } else {
+        } else if self.run_state != RunState::Dead {
             self.run_state = player_input(self, ctx);
         }
         clean_up_dead(&mut self.world);
@@ -167,9 +170,20 @@ impl GameState for State {
             RGB::named(rltk::BLACK),
             "Arrows to move - Space to attack around you",
         );
+
+        if self.run_state == RunState::Dead {
+            ctx.print_color(
+                0,
+                0,
+                RGB::named(rltk::RED),
+                RGB::named(rltk::BLACK),
+                "You have died.",
+            );
+        }
     }
 }
 
+/// Check for dead monsters, remove from game when found
 fn clean_up_dead(ecs: &mut World) {
     let mut dead_entities: Vec<Entity> = vec![];
     {
@@ -185,6 +199,27 @@ fn clean_up_dead(ecs: &mut World) {
     for entity in dead_entities {
         ecs.delete_entity(entity).unwrap();
     }
+}
+
+///Check if player died, set game state to dead if so
+fn check_player_dead(ecs: &mut World) -> bool {
+    let mut dead_players: Vec<Entity> = vec![];
+    {
+        let entities = ecs.entities();
+        let players = ecs.read_storage::<Player>();
+
+        for (player, entity) in (&players, &entities).join() {
+            if player.hp <= 0 {
+                dead_players.push(entity);
+            }
+        }
+    }
+    if !dead_players.is_empty() {
+        ecs.delete_entity(dead_players[0]).unwrap();
+        return true;
+    }
+
+    false
 }
 
 impl State {
