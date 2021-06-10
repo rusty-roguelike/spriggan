@@ -38,8 +38,7 @@ Keep an eye on your HP in the console output.
 #### Known Issues
 We ran out of time implementing the features we wanted.
 As a result, there were some known bugs we didn't have time to fix.
-- Walking out of bounds will crash the program
-- Player doesn't die when HP is 0
+- Monsters walk through walls
 
 ## Developer Journal (What Worked?)
 The biggest takeaway I got from this project was to really research what libraries you use.
@@ -65,6 +64,8 @@ certain things. Turns out, sometimes the tutorials had "hacks" to "make the borr
 Going forward, I would continue to work with `rltk` and the `specs` entity component system.
 The ECS model is a great way of decoupling logic in game development, and I will be using
 the pattern going forward.
+
+Note: we used the tutorial at https://bfnightly.bracketproductions.com/rustbook/ as a starting point.
 
 ## License
 MIT
